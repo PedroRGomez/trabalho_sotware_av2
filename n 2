@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
+
+void testSerialPort(const char* portName) {
+    HANDLE hSerial;
+    DCB dcbSerialParams;
+    COMSTAT comStat;
+    DWORD errors;
+
+    // Abrir a porta serial
+    hSerial = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hSerial == INVALID_HANDLE_VALUE) {
+        printf("Falha ao abrir a porta serial.\n");
+        return;
+    }
+
+    // Configurar os parâmetros da porta serial
+    if (!GetCommState(hSerial, &dcbSerialParams)) {
+        printf("Falha ao obter os parâmetros da porta serial.\n");
+        CloseHandle(hSerial);
+        return;
+    }
+
+    // Configurar a velocidade de transmissão e outros parâmetros
+    dcbSerialParams.BaudRate = CBR_9600;  // Velocidade de 9600 bps
+    dcbSerialParams.ByteSize = 8;         // Tamanho de 8 bits
+    dcbSerialParams.StopBits = ONESTOPBIT; // 1 bit de parada
+    dcbSerialParams.Parity = NOPARITY;     // Sem paridade
+
+    if (!SetCommState(hSerial, &dcbSerialParams)) {
+        printf("Falha ao configurar os parâmetros da porta serial.\n");
+        CloseHandle(hSerial);
+        return;
+    }
+
+    // Obter os parâmetros atuais da porta serial
+    if (!GetCommState(hSerial, &dcbSerialParams)) {
+        printf("Falha ao obter os parâmetros da porta serial.\n");
+        CloseHandle(hSerial);
+        return;
+    }
+
+    printf("Parâmetros da porta serial:\n");
+    printf("Velocidade de transmissão: %d bps\n", dcbSerialParams.BaudRate);
+    printf("Tamanho de bits: %d\n", dcbSerialParams.ByteSize);
+    printf("Bits de parada: %d\n", dcbSerialParams.StopBits);
+    printf("Paridade: %d\n", dcbSerialParams.Parity);
+
+    // Obter informações sobre erros na comunicação
+    if (!ClearCommError(hSerial, &errors, &comStat)) {
+        printf("Falha ao obter informações sobre erros na comunicação.\n");
+        CloseHandle(hSerial);
+        return;
+    }
+
+    printf("Erros de comunicação: %d\n", errors);
+
+    // Fechar a porta serial
+    if (!CloseHandle(hSerial)) {
+        printf("Falha ao fechar a porta serial.\n");
+        return;
+    }
+
+    printf("Porta serial fechada com sucesso.\n");
+}
+
+int main() {
+    const char* portName = "COM1"; // Altere para o nome da porta serial que deseja testar
+
+    testSerialPort(portName);
+
+    return 0;
+}
